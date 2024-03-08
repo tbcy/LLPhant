@@ -63,10 +63,10 @@ class QuestionAnswering
         // First we need to give the context to openAI with the good instructions
         $userQuestion = $messages[count($messages) - 1]->content;
         $systemMessage = $this->searchDocumentAndCreateSystemMessage($userQuestion, $k, $additionalArguments);
-        $this->openAIChat->setSystemMessage($systemMessage);
+        $this->chat->setSystemMessage($systemMessage);
 
         // Then we can just give the conversation
-        return $this->openAIChat->generateChat($messages);
+        return $this->chat->generateChat($messages);
     }
 
     /**
