@@ -8,7 +8,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Utils;
 use LLPhant\Chat\FunctionInfo\FunctionInfo;
 use LLPhant\Exception\HttpExcetion;
-use LLPhant\Exception\MissingFeatureExcetion;
+use LLPhant\Exception\MissingFeatureException;
 use LLPhant\Exception\MissingParameterExcetion;
 use LLPhant\OllamaConfig;
 use LLPhant\Utility;
@@ -22,7 +22,9 @@ use Psr\Http\Message\StreamInterface;
  */
 class OllamaChat implements ChatInterface
 {
-    private Message $systemMessage;
+    private ?Message $systemMessage = null;
+
+    private readonly bool $formatJson;
 
     public Client $client;
 
@@ -35,6 +37,8 @@ class OllamaChat implements ChatInterface
         $this->client = new Client([
             'base_uri' => $config->url,
         ]);
+
+        $this->formatJson = $config->formatJson;
     }
 
     /**
@@ -44,14 +48,24 @@ class OllamaChat implements ChatInterface
      */
     public function generateText(string $prompt): string
     {
+        $params = [
+            'model' => $this->config->model,
+            'prompt' => $prompt,
+            'stream' => false,
+        ];
+
+        if ($this->formatJson) { // force output to be in a json format (in opposition to a text)
+            $params['format'] = 'json';
+        }
+
+        if ($this->systemMessage instanceof Message) {
+            $params['system'] = $this->systemMessage->content;
+        }
+
         $response = $this->sendRequest(
             'POST',
             'generate',
-            [
-                'model' => $this->config->model,
-                'prompt' => $prompt,
-                'stream' => false,
-            ]
+            $params,
         );
         $json = Utility::decodeJson($response->getBody()->getContents());
 
@@ -128,23 +142,23 @@ class OllamaChat implements ChatInterface
     /** @param  FunctionInfo[]  $tools */
     public function setTools(array $tools): void
     {
-        throw new MissingFeatureExcetion('This feature is not supported');
+        throw new MissingFeatureException('This feature is not supported');
     }
 
     public function addTool(FunctionInfo $functionInfo): void
     {
-        throw new MissingFeatureExcetion('This feature is not supported');
+        throw new MissingFeatureException('This feature is not supported');
     }
 
     /** @param  FunctionInfo[]  $functions */
     public function setFunctions(array $functions): void
     {
-        throw new MissingFeatureExcetion('This feature is not supported');
+        throw new MissingFeatureException('This feature is not supported');
     }
 
     public function addFunction(FunctionInfo $functionInfo): void
     {
-        throw new MissingFeatureExcetion('This feature is not supported');
+        throw new MissingFeatureException('This feature is not supported');
     }
 
     /**
